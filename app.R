@@ -131,7 +131,6 @@ ui <- fluidPage(
           tags$li(strong("COMPARISONS"), "- specifies comparisons to make"),
           tags$li(strong("REGIONS"), "- contains regions of interest (can be split into multiple sheets like REGIONS_1, REGIONS_2)")
         ),
-        p("Column order is fixed but names can be arbitrary. Additional columns will be ignored."),
         p("Download the example file below to see the required format.")
       ),
       
@@ -197,11 +196,6 @@ server <- function(input, output, session) {
     }
   )
     
-  # # Check if file is uploaded
-  # output$fileUploaded <- reactive({
-  #   return(!is.null(input$config_file))
-  # })
-
   # Check if file is uploaded
   output$fileUploaded <- reactive({
     return(values$file_validated)
