@@ -1,0 +1,82 @@
+#!/bin/bash -l
+#$ -cwd
+#$ -j y
+#$ -P wax-dk
+#$ -o log.txt
+#$ -N boxplotter
+#$ -pe omp 4
+#$ -l mem_per_core=8G
+#$ -l h_rt=04:00:00
+# -l scratch_free=200G
+
+echo "=========================================================="
+Start_Time=$(date +"%s")
+echo "Starting on : $(date)"
+echo "Running on node   : $(hostname)"
+echo "Current job ID    : $JOB_ID"
+echo "Current job name  : $JOB_NAME"
+echo "Task index number : $TASK_ID"
+echo "=========================================================="
+
+function send_email(){
+    TO=$1
+    FROM=$1
+    SUBJECT="Boxplotter results"
+    ATTACHMENT=$2
+    RESULTS=$3
+    BOUNDARY="boundary-$(date +%s)"
+    
+    # Create the email with attachment
+    cat << EOF | sendmail "$TO"
+From: $FROM
+To: $TO
+Subject: $SUBJECT
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="$BOUNDARY"
+
+--$BOUNDARY
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+Copies of the attached files are available on SCC: $RESULTS
+
+--$BOUNDARY
+Content-Type: application/zip
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="$(basename $ATTACHMENT)"
+
+$(base64 < "$ATTACHMENT")
+--$BOUNDARY--
+EOF
+}
+
+## MAIN
+module load R/4.4.3
+set -eux
+
+## ARGS
+EMAIL="$(whoami)@bu.edu"
+CONFIGPATH=$1
+
+## RESULTS
+current_date="$(date +%Y%m%d_%H%M)"
+results_dir="results/${current_date}"
+FULL_PATH_RESULTS_DIR="$(pwd)/${results_dir}"
+
+mkdir -p ${results_dir}
+pushd ${results_dir}
+
+Rscript ../../boxplotter.R ${CONFIGPATH}
+
+rm -rf Rplots.pdf
+7z a "boxplotter_results_${current_date}.zip" ./*{.pdf,.xlsx}
+ZIP_PATH=$(realpath *.zip)
+
+send_email ${EMAIL} ${ZIP_PATH} ${FULL_PATH_RESULTS_DIR}
+popd
+
+
+End_Time=$(date +"%s")
+diff=$(($End_Time-$Start_Time))
+echo "$(($diff / 3600)) hours, $((($diff / 60) % 60)) minutes and $(($diff % 60)) seconds elapsed."
+echo "=========================================================="
