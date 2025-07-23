@@ -1,6 +1,6 @@
 ## loading R environment
 current_dir=getwd()
-setwd("/projectnb2/wax-dk/max/src/rprojects/rsamtools_atac")
+setwd("/projectnb/wax-es/routines/RENV_443")
 source("renv/activate.R")
 setwd(current_dir)
 

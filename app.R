@@ -258,7 +258,8 @@ server <- function(input, output, session) {
     # Copy file to permanent location with timestamp
     timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
     file_ext <- tools::file_ext(input$config_file$name)
-    permanent_filename <- paste0("config_", timestamp, ".", file_ext)
+    file_name <- tools::file_path_sans_ext(basename(input$config_file$name))
+    permanent_filename <- paste0(file_name,"_", timestamp, ".", file_ext)
     permanent_path <- file.path(upload_dir, permanent_filename)
     
     file.copy(input$config_file$datapath, permanent_path, overwrite = TRUE)
@@ -354,6 +355,7 @@ server <- function(input, output, session) {
         "\nConfiguration file:", basename(values$uploaded_file_path),
         "\nSubmission time:", Sys.time(),
         "\n\nTo check job status, run: qstat -j", values$job_id,
+        "\nFeel free to close this tab; your job will continue running in the background.",
         sep = " "
       )
     }

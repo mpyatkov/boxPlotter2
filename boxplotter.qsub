@@ -19,11 +19,17 @@ echo "Task index number : $TASK_ID"
 echo "=========================================================="
 
 function send_email(){
+    # args:
+    # email
+    # attachment
+    # results directory path
+    # config name
+     
     TO=$1
     FROM=$1
-    SUBJECT="Boxplotter results"
     ATTACHMENT=$2
     RESULTS=$3
+    SUBJECT="Boxplotter results: $4"
     BOUNDARY="boundary-$(date +%s)"
     
     # Create the email with attachment
@@ -58,9 +64,12 @@ set -eux
 EMAIL="$(whoami)@bu.edu"
 CONFIGPATH=$1
 
+BASENAMECONF=$(basename $CONFIGPATH)
+
 ## RESULTS
-current_date="$(date +%Y%m%d_%H%M)"
-results_dir="results/${current_date}"
+# current_date="$(date +%Y%m%d_%H%M)"
+# results_dir="results/${current_date}"
+results_dir="results/${BASENAMECONF%.*}"
 FULL_PATH_RESULTS_DIR="$(pwd)/${results_dir}"
 
 mkdir -p ${results_dir}
@@ -69,10 +78,10 @@ pushd ${results_dir}
 Rscript ../../boxplotter.R ${CONFIGPATH}
 
 rm -rf Rplots.pdf
-7z a "boxplotter_results_${current_date}.zip" ./*{.pdf,.xlsx}
+7z a "${BASENAMECONF}.zip" ./*{.pdf,.xlsx}
 ZIP_PATH=$(realpath *.zip)
 
-send_email ${EMAIL} ${ZIP_PATH} ${FULL_PATH_RESULTS_DIR}
+send_email ${EMAIL} ${ZIP_PATH} ${FULL_PATH_RESULTS_DIR} ${BASENAMECONF}
 popd
 
 
