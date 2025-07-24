@@ -125,12 +125,12 @@ ui <- fluidPage(
       
       div(
         style = "margin-top: 15px; font-size: 0.9em; color: #555;",
-        p("The configuration file must be an XLSX file containing at least three sheets:"),
-        tags$ul(
-          tags$li(strong("GROUPS"), "- defines sample groups"),
-          tags$li(strong("COMPARISONS"), "- specifies comparisons to make"),
-          tags$li(strong("REGIONS"), "- contains regions of interest (can be split into multiple sheets like REGIONS_1, REGIONS_2)")
-        ),
+        # p("The configuration file must be an XLSX file containing at least three sheets:"),
+        # tags$ul(
+        #   tags$li(strong("GROUPS"), "- defines sample groups"),
+        #   tags$li(strong("COMPARISONS"), "- specifies comparisons to make"),
+        #   tags$li(strong("REGIONS"), "- contains regions of interest (can be split into multiple sheets like REGIONS_1, REGIONS_2)")
+        # ),
         p("Download the example file below to see the required format.")
       ),
       
@@ -138,7 +138,17 @@ ui <- fluidPage(
       div(
         style = "margin-top: 15px; text-align: center;",
         downloadButton("downloadExample",
-                       label = "Download Example File",
+                       label = "Download Example Configuration File",
+                       icon = icon("download"),
+                       class = "btn-primary",
+                       style = "width: 100%;")
+      ),
+      
+      # Instructions file download
+      div(
+        style = "margin-top: 5px; text-align: center;",
+        downloadButton("downloadInstructions",
+                       label = "Download Instructions",
                        icon = icon("download"),
                        class = "btn-primary",
                        style = "width: 100%;")
@@ -196,6 +206,16 @@ server <- function(input, output, session) {
     }
   )
     
+  # Download instructions file handler
+  output$downloadInstructions <- downloadHandler(
+    filename = function() {
+      "instructions.pdf"  # Name of the downloaded file
+    },
+    content = function(file) {
+      file.copy("www/instructions.pdf", file)  # Assumes the file is in the www/ folder
+    }
+  )
+  
   # Check if file is uploaded
   output$fileUploaded <- reactive({
     return(values$file_validated)
