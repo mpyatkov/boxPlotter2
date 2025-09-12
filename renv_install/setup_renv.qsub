@@ -1,0 +1,53 @@
+#!/bin/bash -l
+#$ -cwd
+#$ -j y
+#$ -P wax-dk
+#$ -o log.txt
+#$ -N task
+#$ -pe omp 4
+#$ -l mem_per_core=2G
+#$ -l h_rt=04:00:00
+# -l scratch_free=200G
+
+echo "=========================================================="
+Start_Time=$(date +"%s")
+echo "Starting on : $(date)"
+echo "Running on node   : $(hostname)"
+echo "Current job ID    : $JOB_ID"
+echo "Current job name  : $JOB_NAME"
+echo "Task index number : $TASK_ID"
+echo "=========================================================="
+
+set -eu
+module load R/4.4.3
+
+# Check if renv is available
+if ! Rscript -e "if (!requireNamespace('renv', quietly = TRUE)) quit(status = 1)" 2>/dev/null; then
+    echo "Error: renv package not found. Please install it first."
+    exit 1
+fi
+
+# Restore renv environment
+echo "Restoring renv environment..."
+Rscript << 'EOF'
+if (!requireNamespace("renv", quietly = TRUE)) {
+    install.packages("renv", repos = "https://cloud.r-project.org/")
+}
+
+# Configure renv settings
+renv::settings$use.cache(FALSE)
+
+# Restore packages
+renv::restore(clean = TRUE, prompt = FALSE)
+
+# Verify installation
+cat("renv restore completed successfully\n")
+EOF
+
+echo "Environment setup complete!"
+
+
+End_Time=$(date +"%s")
+diff=$(($End_Time-$Start_Time))
+echo "$(($diff / 3600)) hours, $((($diff / 60) % 60)) minutes and $(($diff % 60)) seconds elapsed."
+echo "=========================================================="
