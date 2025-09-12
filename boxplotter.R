@@ -21,6 +21,8 @@ library(patchwork)
 library(ggpubr)## for representing stats
 library(valr) ## for bam coverage
 library(vroom)
+library(future)
+library(furrr)
 
 CUSTOM_COLORS <- c(
   "#66C2E0",  # Light Blue  
@@ -160,14 +162,19 @@ calculate_frip <- function(cache_path, samples, peaks_union, progress_reporter =
            nfrag_union_ratio = round(n_frag_in_union/total_frag,3))
   }
   
-  imap(lfrag, \(file_path, ix) {
+  # imap(lfrag, \(file_path, ix) {
+  #   
+  #   if (!is.null(progress_reporter)) {
+  #     progress_reporter(value = ix/length(lfrag), 
+  #                       message = paste("Calculating FRiP", ix, "of", length(lfrag)))
+  #   } 
+  #   
+  #   sid_fragments_in_peaks_union(file_path, peaks_union)}) %>% 
+  
+  future_map(lfrag, \(file_path) {
+    sid_fragments_in_peaks_union(file_path, peaks_union)
+  }, .progress = FALSE, .options = furrr_options(seed = TRUE)) %>% 
     
-    if (!is.null(progress_reporter)) {
-      progress_reporter(value = ix/length(lfrag), 
-                        message = paste("Calculating FRiP", ix, "of", length(lfrag)))
-    } 
-    
-    sid_fragments_in_peaks_union(file_path, peaks_union)}) %>% 
     list_rbind() %>% 
     mutate(rippm = round(min(n_fragments_in_peaks_union)/n_fragments_in_peaks_union, 3),
            frip = round(n_fragments_in_peaks_union/mean(n_fragments_in_peaks_union),3))
@@ -215,15 +222,18 @@ calc_reads_in_region <- function(regions, bam_paths, progress_reporter = NULL) {
   param <- ScanBamParam(which = region)
   
   ## bam counts
-  imap(bam_paths, \(bam_file, ix) {
-    
-    if (!is.null(progress_reporter)) {
-      progress_reporter(value = ix/length(bam_paths), 
-               message = paste("Counting reads in regions of interest", ix, "of", length(bam_paths)))
-    } 
-    
+  # imap(bam_paths, \(bam_file, ix) {
+  #   
+  #   if (!is.null(progress_reporter)) {
+  #     progress_reporter(value = ix/length(bam_paths), 
+  #              message = paste("Counting reads in regions of interest", ix, "of", length(bam_paths)))
+  #   } 
+  #   
+  #   countBam(bam_file, param = param)
+  # })
+  future_map(bam_paths, \(bam_file) {
     countBam(bam_file, param = param)
-  }) %>% list_rbind()
+  }, .progress = FALSE, .options = furrr_options(seed = TRUE)) %>% list_rbind()
 }
 
 # Function to process regions and calculate read counts
@@ -667,6 +677,10 @@ if (length(args) < 1) {
 CONFIG_FILE_PATH <- args[1]
 CACHE_PATH <- "/projectnb/wax-es/CHIPSEQ_BAM_CACHE/"
 PROGRESS_FUNCTION <- function(value,message) {print(message)}
+
+NCPU <- ifelse(is.na(args[2]), 1, as.numeric(args[2]))
+print(paste0("NCPU: ", NCPU))
+plan(multicore, workers = NCPU) 
 
 run_analysis_pipeline(CONFIG_FILE_PATH, CACHE_PATH, PROGRESS_FUNCTION)
 

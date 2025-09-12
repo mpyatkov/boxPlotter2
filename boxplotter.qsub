@@ -4,9 +4,9 @@
 #$ -P wax-dk
 #$ -o log.txt
 #$ -N boxplotter
-#$ -pe omp 4
+#$ -pe omp 8
 #$ -l mem_per_core=8G
-#$ -l h_rt=04:00:00
+#$ -l h_rt=08:00:00
 # -l scratch_free=200G
 
 echo "=========================================================="
@@ -75,7 +75,7 @@ FULL_PATH_RESULTS_DIR="$(pwd)/${results_dir}"
 mkdir -p ${results_dir}
 pushd ${results_dir}
 
-Rscript ../../boxplotter.R ${CONFIGPATH}
+Rscript ../../boxplotter.R ${CONFIGPATH} $NSLOTS
 
 rm -rf Rplots.pdf
 7z a "${BASENAMECONF}.zip" ./*{.pdf,.xlsx}
