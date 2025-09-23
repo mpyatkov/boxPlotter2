@@ -18,7 +18,7 @@ echo "Current job name  : $JOB_NAME"
 echo "Task index number : $TASK_ID"
 echo "=========================================================="
 
-function send_email(){
+function send_email_with_attachment(){
     # args:
     # email
     # attachment
@@ -56,6 +56,39 @@ $(base64 < "$ATTACHMENT")
 EOF
 }
 
+function send_email(){
+    # args:
+    # email
+    # results directory path
+    # config name
+     
+    TO=$1
+    FROM=$1
+    RESULTS=$2
+    SUBJECT="Boxplotter results: $3"
+    BOUNDARY="boundary-$(date +%s)"
+    
+    # Create the email with attachment
+    cat << EOF | sendmail "$TO"
+From: $FROM
+To: $TO
+Subject: $SUBJECT
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="$BOUNDARY"
+
+--$BOUNDARY
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+The zip file more than 10MB in size and was not attached.
+You can find all the files on SCC: $RESULTS
+
+$(base64 < "$ATTACHMENT")
+--$BOUNDARY--
+EOF
+}
+
+
 ## MAIN
 module load R/4.4.3
 set -eux
@@ -81,7 +114,16 @@ rm -rf Rplots.pdf
 7z a "${BASENAMECONF}.zip" ./*{.pdf,.xlsx}
 ZIP_PATH=$(realpath *.zip)
 
-send_email ${EMAIL} ${ZIP_PATH} ${FULL_PATH_RESULTS_DIR} ${BASENAMECONF}
+fsize=$(du -m $ZIP_PATH | cut -f1)
+
+## send with attachment if zip size less than 10mb
+if [ "$fsize" -gt "10" ]; then
+    echo "File exceeds limit: ${fsize}MB > 10MB"
+    send_email ${EMAIL} ${FULL_PATH_RESULTS_DIR} ${BASENAMECONF}
+else
+    send_email_with_attachment ${EMAIL} ${ZIP_PATH} ${FULL_PATH_RESULTS_DIR} ${BASENAMECONF}
+fi
+
 popd
 
 
