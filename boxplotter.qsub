@@ -108,6 +108,9 @@ FULL_PATH_RESULTS_DIR="$(pwd)/${results_dir}"
 mkdir -p ${results_dir}
 pushd ${results_dir}
 
+# copy config file into results directory
+cp $CONFIGPATH ./
+
 # Rscript ../../boxplotter.R ${CONFIGPATH} $NSLOTS
 Rscript ../../boxplotter.R ${CONFIGPATH} 8
 
