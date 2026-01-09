@@ -1,6 +1,5 @@
 library(shiny)
 library(shinyWidgets)
-library(DT)
 library(readxl)
 
 validate_excel_file <- function(file_path, 
