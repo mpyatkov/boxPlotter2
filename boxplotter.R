@@ -640,7 +640,7 @@ create_pivoted_data <- function(counts_norm, value_col, config) {
     distinct() %>% 
     select(region_id, dataset_id, chr = seqnames, start, end, width, sample_id, status, counts = !!value_col) %>%
     left_join(., config$groups %>% mutate(ord = row_number()) %>% select(sample_id, ord), join_by(sample_id)) %>% 
-    mutate(caption = str_glue("{sample_id} ({status})")) %>%
+    mutate(caption = str_glue("{status} ({sample_id})")) %>%
     arrange(ord) %>%
     select(-c(status, sample_id, ord)) %>%
     mutate(counts = round(counts,3)) %>% 
